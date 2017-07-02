@@ -12,6 +12,7 @@ class Preprocessor(object):
     TRAIN_PREFIX = 'train_'
     VALID_PREFIX = 'valid_'
     TEST_PREFIX = 'test_'
+    
     UNK_ID = 1
     MAX_DATA_LENGTH = 200
 

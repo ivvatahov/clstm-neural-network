@@ -45,7 +45,7 @@ def model_train(x, y, keep_prob, sess, train_op, loss, accuracy, f1_score, tp, t
             # current_step = tf.train.global_step(sess, global_step)
 
 
-            if(i % 1000 == 0):
+            if(i % data.total_batch - 1 == 0):
                 saver.save(sess, os.path.join(logs_path, "model.ckpt"), i)
 
             if(i % log_interval == 0):

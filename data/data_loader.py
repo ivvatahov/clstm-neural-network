@@ -28,18 +28,18 @@ class DataLoader(object):
         self.vocab_len = len(self.vocabulary)
         self.total_batch = int((self.data_len - 1) / self.batch_size) + 1
         
-    def get_columns(*args):
-        return self.data[args]
-
     def next_batch(self, shuffle=True):
         start = self.current_batch * self.batch_size
         end = min((self.current_batch + 1) * self.batch_size, self.data_len)
         self.current_batch = (self.current_batch + 1) % self.total_batch
-        if shuffle:
-            # TODO shuffle the data at the end of each epoch
-            return self.source[start:end], self.labels[start:end]
-        else:
-            return self.source[start:end], self.labels[start:end]
+       
+        if shuffle and self.current_batch == 1:
+            print("baba")
+            shuffle_idxs = np.random.permutation(self.data_len)
+            self.source = self.source[shuffle_idxs]
+            self.labels = self.labels[shuffle_idxs]
+
+        return self.source[start:end], self.labels[start:end]
 
     def __read_file(self, path, filename):
         with open(path + filename, 'rb') as f:
