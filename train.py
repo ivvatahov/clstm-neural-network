@@ -5,13 +5,13 @@ from model.trainer import *
 
 BATCH_SIZE = 32
 NUM_CLASSES = 2
-NUM_EPOCHS = 4
+NUM_EPOCHS = 3
 LEARNING_RATE = 0.001
 REGULARIZATION_RATE = 0.01
 
 embedding_dim = 100
 
-logs_path = "/app/tmp/logs/24/"
+logs_path = "/app/tmp/logs/26/"
 data_root = "/app/data/datasets/amazon-fine-food-reviews/"
 
 train_filename = "train_Reviews"
