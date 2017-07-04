@@ -34,7 +34,6 @@ class DataLoader(object):
         self.current_batch = (self.current_batch + 1) % self.total_batch
        
         if shuffle and self.current_batch == 1:
-            print("baba")
             shuffle_idxs = np.random.permutation(self.data_len)
             self.source = self.source[shuffle_idxs]
             self.labels = self.labels[shuffle_idxs]
