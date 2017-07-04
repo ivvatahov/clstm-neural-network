@@ -4,11 +4,11 @@ from tensorflow.contrib.tensorboard.plugins import projector
 import os
 
 
-dropout = 0.5
+dropout = 0.75
 
-def model_train(x, y, keep_prob, sess, train_op, loss, accuracy, f1_score, tp, tn, fp, fn, global_step,
-    embedding_matrix,merged_summary_op, logs_path, log_interval, num_epochs, data, 
-    valid_data):
+def model_train(model, x, y, lengths, keep_prob, sess, train_op, loss, accuracy, f1_score, 
+    tp, tn, fp, fn, global_step, embedding_matrix,merged_summary_op, logs_path, 
+    log_interval, num_epochs, data, valid_data):
     """
     """
     saver = tf.train.Saver()
@@ -29,31 +29,37 @@ def model_train(x, y, keep_prob, sess, train_op, loss, accuracy, f1_score, tp, t
     sess.run(tf.global_variables_initializer())
 
     print("Start training...")
-    for ep in range(1, num_epochs + 1):
+    for ep in range(num_epochs):
         
         for i in range(data.total_batch):
 
             x_batch, y_batch = data.next_batch()
-           
+            
+            s_lengths = np.repeat(data.sequence_len, data.batch_size)
             feed_dict = {
                 x: x_batch,
                 y: y_batch,
+                lengths: np.repeat(data.sequence_len, y_batch.shape[0]),
                 keep_prob: dropout
             }
+
+            model.is_training = True
             _, cost, acc, f1_train = sess.run([train_op, loss, accuracy, f1_score], feed_dict)
             
             # current_step = tf.train.global_step(sess, global_step)
-
 
             if(i % data.total_batch - 1 == 0):
                 saver.save(sess, os.path.join(logs_path, "model.ckpt"), i)
 
             if(i % log_interval == 0):
+
+                model.is_training = False
                 val_acc, TP, TN, FP, FN, f1_valid, summary = sess.run([
                     accuracy, tp, tn, fp, fn, f1_score, merged_summary_op], 
                                                        feed_dict={
                                                          x : valid_data.source[:2048],
                                                          y : valid_data.labels[:2048],
+                                                         lengths: np.repeat(data.sequence_len, 2048),
                                                          keep_prob: 1
                                                        })
                

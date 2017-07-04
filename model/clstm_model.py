@@ -5,13 +5,14 @@ import tensorflow as tf
 class CLSTMModel(BaseModel):
 
     def __init__(self, num_classes, embedding_dim, sequence_len, 
-                 num_units=64, filter_num=64, filter_size=4, is_training=True):
+                 num_units=64, filter_num=128, filter_size=3, is_training=True):
         self.num_classes = num_classes
         self.embedding_dim = embedding_dim
         self.sequence_len = sequence_len
         self.num_units = num_units
         self.filter_num = filter_num
         self.filter_size = filter_size
+        self.is_training = is_training
 
     def __activation_summary(self, x):
         tensor_name = x.op.name
@@ -19,7 +20,7 @@ class CLSTMModel(BaseModel):
 
     def __conv2d(self, x, filter_r, filter_c, filter_num, use_l2_loss=True, name="conv"):
         if use_l2_loss:
-            l_regularizer = tf.contrib.layers.l2_regularizer(0.0005)
+            l_regularizer = tf.contrib.layers.l2_regularizer(0.0)
         else:
             l_regularizer = None
 
@@ -28,7 +29,7 @@ class CLSTMModel(BaseModel):
             W = tf.get_variable('weights' ,
                 initializer=tf.truncated_normal(filter_shape, stddev=0.1),
                 regularizer=l_regularizer)
-            b = tf.get_variable("biases", initializer=tf.constant(0.1, shape=[[filter_num]]))
+            b = tf.get_variable("biases", initializer=tf.constant(0.0, shape=[filter_num]))
             
             conv = tf.nn.conv2d(x, W, [1, 1, 1, 1], padding='VALID')
             conv = tf.nn.bias_add(conv, b)
@@ -53,7 +54,7 @@ class CLSTMModel(BaseModel):
 
     def __fc(self, x, h_dim, use_l2_loss=True, name="fc"):
         if use_l2_loss:
-            l_regularizer = tf.contrib.layers.l2_regularizer(0.0005)
+            l_regularizer = tf.contrib.layers.l2_regularizer(0.01)
         else:
             l_regularizer = None
 
@@ -67,30 +68,33 @@ class CLSTMModel(BaseModel):
             self.__activation_summary(out)
             return out
 
-    def predict(self, x, keep_prob):
+    def predict(self, x, lengths, keep_prob):
 
         # Conv Layer
-        conv = self.__conv2d(x, self.filter_size, self.embedding_dim, self.filter_num, "conv")
+        conv = self.__conv2d(x, self.filter_size, self.embedding_dim, 
+            self.filter_num, use_l2_loss=False, name="conv")
 
         # Remove the empty 2nd dimension
         conv_out = tf.squeeze(conv, 2)
 
-        # Dropout
-        dropout = self.__dropout(conv_out, keep_prob)
-        
         # LSTMs
-        lstm_out, _ = self.__lstm(dropout, self.num_units, "lstm1")
+        lstm_out, _ = self.__lstm(conv_out, self.num_units, "lstm1")
         # lstm_out, _ = self.__lstm(lstm_out, self.num_units, "lstm2")
-        
-        # Reshape the tensor to fit in fc layer
-        shape = lstm_out.get_shape().as_list()
-        squeeze_len = shape[1] * shape[2]
-        lstm_out_reshape = tf.reshape(lstm_out,[-1, squeeze_len])
+
+
+        # Get the last output from lstm_out
+        batch_size = tf.shape(lstm_out)[0]
+        batch_range = tf.range(batch_size)
+        indices = tf.stack([batch_range, lengths - 3], axis=1)
+        lstm_out = tf.gather_nd(lstm_out, indices)
 
         # FC layer
-        out = self.__fc(lstm_out_reshape, self.num_classes, "output")
+        out = self.__fc(lstm_out, self.num_classes, "output")
 
         # Dropout
         out = self.__dropout(out, keep_prob)
         
+        #Softmax
+        # out = tf.nn.softmax(out)
+
         return out
