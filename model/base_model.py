@@ -8,5 +8,5 @@ filters_num = 16
 
 class BaseModel:
 
-    def __init__(self):
-        pass
+    def _activations_summary(self, x):
+    	tf.summary.histogram(x.name + "/activations", x)

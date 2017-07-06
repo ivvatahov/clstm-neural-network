@@ -4,7 +4,7 @@ from tensorflow.contrib.tensorboard.plugins import projector
 import os
 
 
-dropout = 0.75
+dropout = 0.5
 
 def model_train(model, x, y, lengths, keep_prob, sess, train_op, loss, accuracy, f1_score, 
     tp, tn, fp, fn, global_step, embedding_matrix,merged_summary_op, logs_path, 
