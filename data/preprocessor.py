@@ -5,14 +5,13 @@ import os
 from collections import Counter
 from six.moves import cPickle as pickle
 
-class Preprocessor(object):
 
+class Preprocessor(object):
     TEST_PREFIX = 'test_'
     VOCABULARY_PREFIX = 'vocabulary_'
     TRAIN_PREFIX = 'train_'
     VALID_PREFIX = 'valid_'
-    TEST_PREFIX = 'test_'
-    
+
     UNK_ID = 1
     MAX_DATA_LENGTH = 200
 
@@ -20,9 +19,9 @@ class Preprocessor(object):
     _UNK = '<UNK>'
     _EOS = '<EOS>'
 
-    def __init__(self, path, filename, vocabulary_size, train_size=0.6, 
-                 valid_size=.2, max_data_length=MAX_DATA_LENGTH, pad = _PAD, 
-                 unk = _UNK, eos = _EOS):
+    def __init__(self, path, filename, vocabulary_size, train_size=0.6,
+                 valid_size=.2, max_data_length=MAX_DATA_LENGTH, pad=_PAD,
+                 unk=_UNK, eos=_EOS):
         self.path = path
         self.filename = filename
         self.vocabulary_size = vocabulary_size
@@ -37,6 +36,12 @@ class Preprocessor(object):
         self.separator = ','
         self._dictionary = {}
         self.tokenizer = nltk.TweetTokenizer()
+
+        self.data = None
+        self.data_column = None
+        self.label_column = None
+        self.max_seq_len = None
+        self.new_data = None
 
     def read_data(self):
         self.data = pd.read_csv(self.path + self.filename + ".csv")
@@ -59,11 +64,13 @@ class Preprocessor(object):
         print("Saving vocabulary...")
         word_column = 'Word'
         vocabulary = pd.DataFrame(data=all_words, columns=[word_column, 'Frequency'])
-        vocabulary.to_csv(self.path + self.VOCABULARY_PREFIX + "frequency_" + self.filename, sep=self.separator, index=False,
-                        encoding='utf-8')
-        vocabulary[word_column].to_csv(self.path + self.VOCABULARY_PREFIX + self.filename, sep=self.separator, index=False,
-                        encoding='utf-8')
-        return self._dictionary  
+        vocabulary.to_csv(self.path + self.VOCABULARY_PREFIX + "frequency_" + self.filename, sep=self.separator,
+                          index=False,
+                          encoding='utf-8')
+        vocabulary[word_column].to_csv(self.path + self.VOCABULARY_PREFIX + self.filename, sep=self.separator,
+                                       index=False,
+                                       encoding='utf-8')
+        return self._dictionary
 
     def preprocess(self, data_column, label_column):
 
@@ -72,21 +79,21 @@ class Preprocessor(object):
 
         new_data = self.data[[data_column, label_column]].copy()
         new_data = new_data.loc[new_data[data_column].str.len() < self.max_data_length]
-        
+
         print("Creating the dictionary...")
         self._build_dictionary(new_data, data_column)
-        
+
         print("Tokenize...")
         new_data[data_column] = new_data[data_column].map(lambda x: self.tokenizer.tokenize(x))
-        
+
         print("Replace the words with indexes...")
         new_data[data_column] = new_data[data_column].map(
             lambda x: list(map(
-                lambda x: self._dictionary[x] if x in self._dictionary else self.UNK_ID, x)))
+                lambda y: self._dictionary[y] if y in self._dictionary else self.UNK_ID, x)))
 
         print("Convert labels...")
         new_data[label_column] = new_data[label_column].apply(lambda x: 1 if x > 3 else 0)
-        
+
         # print("Shuffle the data")
         # new_data = new_data.iloc[np.random.permutation(len(new_data))]
 
@@ -96,7 +103,7 @@ class Preprocessor(object):
     def save_data(self):
         # print("Creating train, validation and test set...")
         train, valid, test = self.__train_validate_test_split(self.new_data)
-        
+
         x_train = self.__create_np_array(train[self.data_column].values)
         y_train = train[self.label_column].values.reshape(-1, 1)
 
@@ -110,9 +117,9 @@ class Preprocessor(object):
         self.__save_to_file(x_train, y_train, self.path, self.TRAIN_PREFIX + self.filename)
         self.__save_to_file(x_valid, y_valid, self.path, self.VALID_PREFIX + self.filename)
         self.__save_to_file(x_test, y_test, self.path, self.TEST_PREFIX + self.filename)
-    
 
-    def __save_to_file(self, x, y, path, filename):
+    @staticmethod
+    def __save_to_file(x, y, path, filename):
         pickle_file = os.path.join(path, filename)
         try:
             f = open(pickle_file, 'wb')

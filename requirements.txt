@@ -1,0 +1,5 @@
+nltk
+six
+numpy
+tensorflow
+pandas

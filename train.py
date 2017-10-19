@@ -1,4 +1,3 @@
-from model.cnn_model import CNNModel
 from model.clstm_model import CLSTMModel
 from data.data_loader import DataLoader
 from model.trainer import *
@@ -23,8 +22,8 @@ train_data.load_data()
 valid_data = DataLoader(data_root, valid_filename, NUM_EPOCHS, BATCH_SIZE, "Text", "Score")
 valid_data.load_data()
 
-model = CLSTMModel(num_classes=NUM_CLASSES, embedding_dim=embedding_dim, 
-    sequence_len=train_data.sequence_len)
+model = CLSTMModel(num_classes=NUM_CLASSES, embedding_dim=embedding_dim,
+                   sequence_len=train_data.sequence_len)
 
 sess = tf.Session()
 x = tf.placeholder(tf.int32, [None, train_data.sequence_len], name="x")
@@ -47,13 +46,13 @@ with tf.name_scope(name='model'):
 
 with tf.name_scope(name='prediction'):
     pred = tf.reshape(tf.cast(tf.argmax(logits, axis=1), tf.int32), shape=[-1, 1])
-    
+
 with tf.name_scope('loss'):
     pos_weight = tf.constant([1.0, 1.0])
     loss = tf.reduce_mean(
         tf.nn.weighted_cross_entropy_with_logits(
-            targets=oh_y, 
-            logits=logits, 
+            targets=oh_y,
+            logits=logits,
             pos_weight=pos_weight))
     regularization_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
     total_loss = loss + tf.add_n(regularization_losses)
@@ -62,8 +61,8 @@ with tf.name_scope(name='optimizer'):
     global_step = tf.Variable(0, name="global_step", trainable=False)
     optimizer = tf.train.AdamOptimizer(LEARNING_RATE)
     grads_and_vars = optimizer.compute_gradients(total_loss)
-    train_op = optimizer.apply_gradients(grads_and_vars, 
-        global_step=global_step)
+    train_op = optimizer.apply_gradients(grads_and_vars,
+                                         global_step=global_step)
 
 with tf.name_scope(name='mertics'):
     TP = tf.count_nonzero(pred * y, name='TP')
@@ -107,7 +106,8 @@ for grad, var in grads_and_vars:
 # Merge all summaries into a single op
 merged_summary_op = tf.summary.merge_all()
 
-model_train(model=model, sess=sess, x=x, y=y, lengths=lengths, keep_prob=keep_prob, train_op=train_op, loss=total_loss, accuracy=accuracy, 
-    f1_score=f1_score, tp=TP, tn=TN,fp=FP, fn=FN, global_step=global_step, 
-    embedding_matrix=embedding_matrix, merged_summary_op=merged_summary_op, logs_path=logs_path,
-    log_interval=100, num_epochs=NUM_EPOCHS, data=train_data, valid_data=valid_data)
+model_train(model=model, sess=sess, x=x, y=y, lengths=lengths, keep_prob=keep_prob, train_op=train_op, loss=total_loss,
+            accuracy=accuracy,
+            f1_score=f1_score, tp=TP, tn=TN, fp=FP, fn=FN, embedding_matrix=embedding_matrix,
+            merged_summary_op=merged_summary_op, logs_path=logs_path,
+            log_interval=100, num_epochs=NUM_EPOCHS, data=train_data, valid_data=valid_data)
