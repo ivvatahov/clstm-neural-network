@@ -92,7 +92,7 @@ class Preprocessor(object):
                 lambda y: self._dictionary[y] if y in self._dictionary else self.UNK_ID, x)))
 
         print("Convert labels...")
-        new_data[label_column] = new_data[label_column].apply(lambda x: 1 if x > 3 else 0)
+        new_data[label_column] = new_data[label_column].map(lambda x: 1 if x > 3 else 0)
 
         # print("Shuffle the data")
         # new_data = new_data.iloc[np.random.permutation(len(new_data))]
