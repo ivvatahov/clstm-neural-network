@@ -1,5 +1,6 @@
 from model.clstm_model import CLSTMModel
 from data.data_loader import DataLoader
+from model.metrics.metrics import Metrics
 from model.trainer import *
 
 BATCH_SIZE = 32
@@ -9,7 +10,7 @@ LEARNING_RATE = 0.0001
 
 embedding_dim = 100
 
-logs_path = "/app/tmp/logs/79/"
+logs_path = "/app/tmp/logs/10/"
 data_root = "/app/data/datasets/amazon-fine-food-reviews/"
 
 train_filename = "train_Reviews"
@@ -64,36 +65,21 @@ with tf.name_scope(name='optimizer'):
     train_op = optimizer.apply_gradients(grads_and_vars,
                                          global_step=global_step)
 
-with tf.name_scope(name='mertics'):
-    TP = tf.count_nonzero(pred * y, name='TP')
-    TN = tf.count_nonzero((pred - 1) * (y - 1), name='TN')
-    FP = tf.count_nonzero(pred * (y - 1), name='FP')
-    FN = tf.count_nonzero((pred - 1) * y, name='FN')
-
-with tf.name_scope('accuracy'):
-    accuracy = (TP + TN) / (TP + FP + FN + TN)
-
-with tf.name_scope('precision'):
-    precision = TP / (TP + FP)
-
-with tf.name_scope('recall'):
-    recall = TP / (TP + FN)
-
-with tf.name_scope('F1'):
-    f1_score = 2 * (precision * recall) / (precision + recall)
+# metrics
+metrics = Metrics(pred, y)
 
 # Create a summary to monitor cost tensor
 tf.summary.scalar("loss", total_loss)
 
 # Create a summary to monitor TP, TN, FP, FN
-tf.summary.scalar("TP", TP)
-tf.summary.scalar("TN", TN)
-tf.summary.scalar("FP", FP)
-tf.summary.scalar("FN", FN)
+tf.summary.scalar("TP", metrics.tp)
+tf.summary.scalar("TN", metrics.tn)
+tf.summary.scalar("FP", metrics.fp)
+tf.summary.scalar("FN", metrics.fn)
 
 # Create a summary to monitor the accuracy and F1 score
-tf.summary.scalar("accuracy", accuracy)
-tf.summary.scalar("f1_score", f1_score)
+tf.summary.scalar("accuracy", metrics.accuracy)
+tf.summary.scalar("f1_score", metrics.f1_score)
 
 # Create summaries to visualize weights
 for var in tf.trainable_variables():
@@ -107,7 +93,6 @@ for grad, var in grads_and_vars:
 merged_summary_op = tf.summary.merge_all()
 
 model_train(model=model, sess=sess, x=x, y=y, lengths=lengths, keep_prob=keep_prob, train_op=train_op, loss=total_loss,
-            accuracy=accuracy,
-            f1_score=f1_score, tp=TP, tn=TN, fp=FP, fn=FN, embedding_matrix=embedding_matrix,
+            metrics=metrics, embedding_matrix=embedding_matrix,
             merged_summary_op=merged_summary_op, logs_path=logs_path,
             log_interval=100, num_epochs=NUM_EPOCHS, data=train_data, valid_data=valid_data)

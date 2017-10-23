@@ -6,8 +6,8 @@ import os
 dropout = 0.5
 
 
-def model_train(model, x, y, lengths, keep_prob, sess, train_op, loss, accuracy, f1_score,
-                tp, tn, fp, fn, embedding_matrix, merged_summary_op, logs_path,
+def model_train(model, x, y, lengths, keep_prob, sess, train_op, loss, metrics,
+                embedding_matrix, merged_summary_op, logs_path,
                 log_interval, num_epochs, data, valid_data):
     """
     """
@@ -41,7 +41,7 @@ def model_train(model, x, y, lengths, keep_prob, sess, train_op, loss, accuracy,
             }
 
             model.is_training = True
-            _, cost, acc, f1_train = sess.run([train_op, loss, accuracy, f1_score], feed_dict)
+            _, cost, acc, f1_train = sess.run([train_op, loss, metrics.accuracy, metrics.f1_score], feed_dict)
 
             # current_step = tf.train.global_step(sess, global_step)
 
@@ -51,7 +51,8 @@ def model_train(model, x, y, lengths, keep_prob, sess, train_op, loss, accuracy,
             if i % log_interval == 0:
                 model.is_training = False
                 val_acc, TP, TN, FP, FN, f1_valid, summary = sess.run([
-                    accuracy, tp, tn, fp, fn, f1_score, merged_summary_op],
+                    metrics.accuracy, metrics.tp, metrics.tn, metrics.fp,
+                    metrics.fn, metrics.f1_score, merged_summary_op],
                     feed_dict={
                         x: valid_data.source[:2048],
                         y: valid_data.labels[:2048],
@@ -65,11 +66,12 @@ def model_train(model, x, y, lengths, keep_prob, sess, train_op, loss, accuracy,
 
                 print("TN:", TN, "FP:", FP)
                 print("FN:", FN, "TP:", TP)
-                print("epoch {}, " \
-                      "step {}/{}, " \
-                      "train_loss {:g}, " \
-                      "train_acc {:g}, " \
-                      "train_f1_score {:g}," \
-                      "valid_acc {:g}, " \
+                print("epoch {}, "
+                      "step {}/{}, "
+                      "train_loss {:g}, "
+                      "train_acc {:g}, "
+                      "train_f1_score {:g},"
+                      "valid_acc {:g}, "
                       "valid_f1_score {:g}".format(ep, i, data.total_batch,
                                                    cost, acc, f1_train, val_acc, f1_valid))
+    summary_writer.close()
