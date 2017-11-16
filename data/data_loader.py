@@ -6,13 +6,11 @@ from six.moves import cPickle as pickle
 class DataLoader(object):
     DEFAULT_VOCABULARY_SIZE = 20000
 
-    def __init__(self, data_root, filename, num_epochs, batch_size,
-                 data_column, labels_column):
+    def __init__(self, data_root, filename, data_column, labels_column, config):
         self.__data_root = data_root
         self.__filename = filename
 
-        self.num_epochs = num_epochs
-        self.batch_size = batch_size
+        self.config = config
         self.data_column = data_column
         self.labels_column = labels_column
 
@@ -32,11 +30,11 @@ class DataLoader(object):
         self.sequence_len = self.source.shape[1]
         self.vocabulary = pd.read_csv(self.__data_root + "vocabulary_Reviews", header=None)
         self.vocab_len = len(self.vocabulary)
-        self.total_batch = int((self.data_len - 1) / self.batch_size) + 1
+        self.total_batch = int((self.data_len - 1) / self.config.batch_size) + 1
 
     def next_batch(self, shuffle=True):
-        start = self.current_batch * self.batch_size
-        end = min((self.current_batch + 1) * self.batch_size, self.data_len)
+        start = self.current_batch * self.config.batch_size
+        end = min((self.current_batch + 1) * self.config.batch_size, self.data_len)
         self.current_batch = (self.current_batch + 1) % self.total_batch
 
         if shuffle and self.current_batch == 1:

@@ -2,19 +2,20 @@ import tensorflow as tf
 
 
 class CLSTMModel:
-    def __init__(self, num_classes, embedding_dim, sequence_len, num_units=32, filter_num=64, filter_size=3,
-                 is_training=True):
-        self.num_classes = num_classes
-        self.embedding_dim = embedding_dim
-        self.sequence_len = sequence_len
-        self.num_units = num_units
-        self.filter_num = filter_num
-        self.filter_size = filter_size
+
+    def __init__(self, config, is_training=True):
+        self.config = config
         self.is_training = is_training
 
     @staticmethod
-    def _activations_summary(x):
+    def __activations_summary(x):
         tf.summary.histogram(x.name + "/activations", x)
+
+    @staticmethod
+    def __dropout(x, keep_prob, name="dropout"):
+        with tf.variable_scope(name) as scope:
+            drop = tf.nn.dropout(x, keep_prob, name=scope.name)
+            return drop
 
     def __conv2d(self, x, filter_r, filter_c, filter_num, use_l2_loss=True, name="conv"):
         if use_l2_loss:
@@ -35,20 +36,14 @@ class CLSTMModel:
                                                 center=True, scale=True,
                                                 is_training=self.is_training)
             conv = tf.nn.relu(conv, name="output")
-            self._activations_summary(conv)
+            self.__activations_summary(conv)
             return conv
-
-    @staticmethod
-    def __dropout(x, keep_prob, name="dropout"):
-        with tf.variable_scope(name) as scope:
-            drop = tf.nn.dropout(x, keep_prob, name=scope.name)
-            return drop
 
     def __lstm(self, x, name="lstm"):
         with tf.variable_scope(name):
-            lstm = tf.contrib.rnn.LSTMCell(self.num_units)
+            lstm = tf.contrib.rnn.LSTMCell(self.config.num_units)
             out, state = tf.nn.dynamic_rnn(lstm, x, dtype=tf.float32)
-            self._activations_summary(out)
+            self.__activations_summary(out)
             return out, state
 
     def __fc(self, x, h_dim, use_l2_loss=True, name="fc"):
@@ -64,7 +59,7 @@ class CLSTMModel:
             b = tf.get_variable("biases", initializer=tf.constant(0.1, shape=[h_dim]))
 
             out = tf.add(tf.matmul(x, weights), b)
-            self._activations_summary(out)
+            self.__activations_summary(out)
             return out
 
     def __batch_norm(self, x):
@@ -76,8 +71,8 @@ class CLSTMModel:
     def predict(self, x, lengths, keep_prob):
 
         # Conv Layer
-        conv = self.__conv2d(x, self.filter_size, self.embedding_dim,
-                             self.filter_num, name="layer1_conv")
+        conv = self.__conv2d(x, self.config.filter_size, self.config.embedding_dim,
+                             self.config.filter_num, name="layer1_conv")
 
         # Remove the empty 2nd dimension
         conv_out = tf.squeeze(conv, 2)
@@ -89,7 +84,7 @@ class CLSTMModel:
         # Get the last output from lstm_out
         batch_size = tf.shape(lstm_out)[0]
         batch_range = tf.range(batch_size)
-        indices = tf.stack([batch_range, lengths - self.filter_size], axis=1)
+        indices = tf.stack([batch_range, lengths - self.config.filter_size], axis=1)
         lstm_out = tf.gather_nd(lstm_out, indices)
 
         # normalize the lstm_out
@@ -98,7 +93,7 @@ class CLSTMModel:
         lstm_out = self.__dropout(lstm_out, keep_prob)
 
         # FC layer
-        out = self.__fc(lstm_out, self.num_classes, name="layer3_fc")
+        out = self.__fc(lstm_out, self.config.num_classes, name="layer3_fc")
 
         # normalize the output
         out = self.__batch_norm(out)
