@@ -31,7 +31,7 @@ with tf.name_scope("embeddings"):
         name="embedding_matrix")
     emb = tf.nn.embedding_lookup(ops['embedding_matrix'], ph['x'])
     emb = tf.expand_dims(emb, -1)
-    emb = tf.nn.dropout(emb, ph['keep_prob'])
+    # emb = tf.nn.dropout(emb, ph['keep_prob'])
 
 with tf.name_scope(name='model'):
     logits = model.predict(emb, ph['lengths'], ph['keep_prob'])
@@ -54,7 +54,7 @@ with tf.name_scope(name='optimizer'):
     optimizer = tf.train.AdamOptimizer(config.learning_rate)
     grads_and_vars = optimizer.compute_gradients(ops['loss'])
     ops['train_op'] = optimizer.apply_gradients(grads_and_vars,
-                                         global_step=global_step)
+                                                global_step=global_step)
 
 # metrics
 metrics = Metrics(pred, ph['y'])

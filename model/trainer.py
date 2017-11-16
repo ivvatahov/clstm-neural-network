@@ -35,7 +35,7 @@ def model_train(model, ph, ops, metrics, config, train_data, valid_data):
                 ph['x']: x_batch,
                 ph['y']: y_batch,
                 ph['lengths']: np.repeat(train_data.sequence_len, y_batch.shape[0]),
-                ph['keep_prob']: config.dropout
+                ph['keep_prob']: 1.0 - config.dropout
             }
 
             model.is_training = True
@@ -45,10 +45,8 @@ def model_train(model, ph, ops, metrics, config, train_data, valid_data):
                                                metrics.f1_score],
                                               feed_dict)
 
-            # current_step = tf.train.global_step(sess, global_step)
-
             if i % train_data.total_batch - 1 == 0:
-                saver.save(sess, os.path.join(config.LOGS_PATH, "model.ckpt"), i)
+                saver.save(sess, os.path.join(config.MODEL_CHECKPOINTS, "model.ckpt"), i)
 
             if i % config.log_interval == 0:
                 model.is_training = False
