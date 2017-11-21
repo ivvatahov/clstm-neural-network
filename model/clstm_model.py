@@ -1,10 +1,10 @@
 import tensorflow as tf
 
+from config import Config
+
 
 class CLSTMModel:
-
-    def __init__(self, config, is_training=True):
-        self.config = config
+    def __init__(self, is_training=True):
         self.is_training = is_training
 
     @staticmethod
@@ -41,7 +41,7 @@ class CLSTMModel:
 
     def __lstm(self, x, name="lstm"):
         with tf.variable_scope(name):
-            lstm = tf.contrib.rnn.LSTMCell(self.config.num_units)
+            lstm = tf.contrib.rnn.LSTMCell(Config.NUM_UNITS)
             out, state = tf.nn.dynamic_rnn(lstm, x, dtype=tf.float32)
             self.__activations_summary(out)
             return out, state
@@ -71,8 +71,8 @@ class CLSTMModel:
     def predict(self, x, lengths, keep_prob):
 
         # Conv Layer
-        conv = self.__conv2d(x, self.config.filter_size, self.config.embedding_dim,
-                             self.config.filter_num, name="layer1_conv")
+        conv = self.__conv2d(x, Config.FILTER_SIZE, Config.EMBEDDING_DIM,
+                             Config.FILTER_NUM, name="layer1_conv")
 
         # Remove the empty 2nd dimension
         conv_out = tf.squeeze(conv, 2)
@@ -84,7 +84,7 @@ class CLSTMModel:
         # Get the last output from lstm_out
         batch_size = tf.shape(lstm_out)[0]
         batch_range = tf.range(batch_size)
-        indices = tf.stack([batch_range, lengths - self.config.filter_size], axis=1)
+        indices = tf.stack([batch_range, lengths - Config.FILTER_SIZE], axis=1)
         lstm_out = tf.gather_nd(lstm_out, indices)
 
         # normalize the lstm_out
@@ -93,7 +93,7 @@ class CLSTMModel:
         lstm_out = self.__dropout(lstm_out, keep_prob)
 
         # FC layer
-        out = self.__fc(lstm_out, self.config.num_classes, name="layer3_fc")
+        out = self.__fc(lstm_out, Config.NUM_CLASSES, name="layer3_fc")
 
         # normalize the output
         out = self.__batch_norm(out)

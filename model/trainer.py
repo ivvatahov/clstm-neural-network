@@ -3,40 +3,49 @@ import tensorflow as tf
 from tensorflow.contrib.tensorboard.plugins import projector
 import os
 
+from config import Config
 
-def model_train(model, ph, ops, metrics, config, train_data, valid_data):
+
+def model_train(sess, model, ph, ops, metrics, train_data, valid_data, vocabulary):
     """
     """
 
-    sess = tf.Session()
+    embedding_matrix = ops['embedding_matrix']
 
     saver = tf.train.Saver()
 
     # Embeddings
     projector_config = projector.ProjectorConfig()
     embedding = projector_config.embeddings.add()
-    embedding.tensor_name = ops['embedding_matrix'].name
-    embedding.metadata_path = os.path.join(config.LOGS_PATH, 'metadata.tsv')
+    embedding.tensor_name = embedding_matrix.name
+    embedding.metadata_path = os.path.join(Config.LOGS_PATH, 'metadata.tsv')
 
     # op to write logs to Tensorboard
-    summary_writer = tf.summary.FileWriter(config.LOGS_PATH, sess.graph)
+    summary_writer = tf.summary.FileWriter(Config.LOGS_PATH, sess.graph)
 
-    with open(config.LOGS_PATH + 'metadata.tsv', 'w', encoding='utf8') as f:
-        for word in train_data.vocabulary.values:
+    with open(Config.LOGS_PATH + 'metadata.tsv', 'w', encoding='utf8') as f:
+        for word in vocabulary.values:
             f.write(str(word[0]) + '\n')
 
     sess.run(tf.global_variables_initializer())
 
     print("Start training...")
-    for ep in range(config.num_epochs):
-        for i in range(train_data.total_batch):
-            x_batch, y_batch = train_data.next_batch()
+    iterator = train_data.make_one_shot_iterator()
+    next_batch = iterator.get_next()
+
+    # TODO: change it
+    total_batch = 100
+    for ep in range(Config.NUM_EPOCHS):
+        for i in range(total_batch):
+
+            # get next batch of data
+            x_batch, y_batch = sess.run(next_batch)
 
             feed_dict = {
                 ph['x']: x_batch,
                 ph['y']: y_batch,
                 ph['lengths']: np.repeat(train_data.sequence_len, y_batch.shape[0]),
-                ph['keep_prob']: config.dropout
+                ph['keep_prob']: Config.DROPOUT
             }
 
             model.is_training = True
@@ -49,9 +58,9 @@ def model_train(model, ph, ops, metrics, config, train_data, valid_data):
             # current_step = tf.train.global_step(sess, global_step)
 
             if i % train_data.total_batch - 1 == 0:
-                saver.save(sess, os.path.join(config.LOGS_PATH, "model.ckpt"), i)
+                saver.save(sess, os.path.join(Config.LOGS_PATH, "model.ckpt"), i)
 
-            if i % config.log_interval == 0:
+            if i % Config.LOG_INTERVAL == 0:
                 model.is_training = False
 
                 feed_dict = {

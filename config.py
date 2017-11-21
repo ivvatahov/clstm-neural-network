@@ -1,13 +1,14 @@
 class Config:
 
     # input
-    num_classes = 2
-    embedding_dim = 100
+    NUM_CLASSES = 2
+    EMBEDDING_DIM = 100
 
     # model
-    num_units = 32
-    filter_num = 64
-    filter_size = 3
+    NUM_UNITS= 32
+    FILTER_NUM = 64
+    FILTER_SIZE = 3
+    MAX_SEQUENCE_LENGTH = 100
 
     # BUCKETS = [(16, 19)]
 
@@ -19,9 +20,11 @@ class Config:
     TEST_FILENAME = "test_Reviews"
     VALID_FILENAME = "valid_Reviews"
 
+    DEFAULT_VOCABULARY_SIZE = 20000
+
     # training
-    log_interval = 100
-    num_epochs = 20
-    batch_size = 32
-    learning_rate = 0.0001
-    dropout = 0.5
+    LOG_INTERVAL = 100
+    NUM_EPOCHS = 20
+    BATCH_SIZE = 32
+    LEARNING_RATE = 0.0001
+    DROPOUT = 0.5

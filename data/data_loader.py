@@ -1,17 +1,14 @@
 import pandas as pd
 import tensorflow as tf
 
+from config import Config
+
 
 class DataLoader(object):
-    DEFAULT_VOCABULARY_SIZE = 20000
 
-    def __init__(self, data_root, filename, data_column, labels_column, config):
+    def __init__(self, data_root, filename):
         self.__data_root = data_root
         self.__filename = filename
-
-        self.config = config
-        self.data_column = data_column
-        self.labels_column = labels_column
 
         self.vocab_len = 0
         self.dataset = None
@@ -19,12 +16,24 @@ class DataLoader(object):
         self.total_batch = None
 
     def load_data(self):
-        self.dataset = tf.data.TextLineDataset(self.__data_root + self.__filename)
-        self.dataset = self.dataset.batch(self.config.batch_size)
+        files = [self.__data_root + self.__filename + ".csv"]
+        dataset = tf.data.TextLineDataset(files)
 
-        # self.source, self.labels = self.__read_file(self.__data_root, self.__filename)
-        # self.sequence_len = self.source.shape[1]
+        dataset = dataset.map(self._read_row)
+        dataset = dataset.repeat(Config.NUM_EPOCHS)
+        # dataset = dataset.padded_batch(Config.BATCH_SIZE,
+        #                                padded_shapes=([None, Config.MAX_SEQUENCE_LENGTH], [None]))
+        # TODO: read CSV
+        self.dataset = dataset
+        return self.dataset
 
     def load_vocab(self):
         self.vocabulary = pd.read_csv(self.__data_root + "vocabulary_Reviews", header=None)
-        self.vocab_len = len(self.vocabulary)
+        return self.vocabulary
+
+    @staticmethod
+    def _read_row(csv_row):
+        record_defaults = [[''], [0]]
+        row = tf.decode_csv(csv_row, record_defaults=record_defaults)
+        out = row[:-1], row[-1]
+        return out
