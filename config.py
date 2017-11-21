@@ -9,6 +9,8 @@ class Config:
     filter_num = 64
     filter_size = 3
 
+    # BUCKETS = [(16, 19)]
+
     # datasets
     LOGS_PATH = "/app/tmp/logs/10/"
     DATA_ROOT = "/app/data/datasets/amazon-fine-food-reviews/"

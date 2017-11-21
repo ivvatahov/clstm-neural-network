@@ -1,8 +1,8 @@
 from data.data_loader import DataLoader
 from data.preprocessor import Preprocessor
-                              
-preprocessor = Preprocessor('/app/data/datasets/amazon-fine-food-reviews/', 
-	                         'Reviews', DataLoader.DEFAULT_VOCABULARY_SIZE)
+
+preprocessor = Preprocessor('/app/data/datasets/amazon-fine-food-reviews/',
+                            'Reviews', DataLoader.DEFAULT_VOCABULARY_SIZE)
 print("Read...")
 preprocessor.read_data()
 print("Preprocessing...")

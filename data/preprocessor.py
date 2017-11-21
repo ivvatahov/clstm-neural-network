@@ -1,9 +1,7 @@
-import pandas as pd
-import numpy as np
-import nltk
-import os
 from collections import Counter
-from six.moves import cPickle as pickle
+
+import nltk
+import pandas as pd
 
 
 class Preprocessor(object):
@@ -38,10 +36,9 @@ class Preprocessor(object):
         self.tokenizer = nltk.TweetTokenizer()
 
         self.data = None
+        self.new_data = None
         self.data_column = None
         self.label_column = None
-        self.max_seq_len = None
-        self.new_data = None
 
     def read_data(self):
         self.data = pd.read_csv(self.path + self.filename + ".csv")
@@ -86,6 +83,9 @@ class Preprocessor(object):
         print("Tokenize...")
         new_data[data_column] = new_data[data_column].map(lambda x: self.tokenizer.tokenize(x))
 
+        # TODO
+        # new_data = new_data.loc[new_data[data_column].len() < self.max_data_length]
+
         print("Replace the words with indexes...")
         new_data[data_column] = new_data[data_column].map(
             lambda x: list(map(
@@ -97,48 +97,18 @@ class Preprocessor(object):
         # print("Shuffle the data")
         # new_data = new_data.iloc[np.random.permutation(len(new_data))]
 
-        self.max_seq_len = new_data[data_column].map(len).max()
+        # self.max_seq_len = new_data[data_column].map(len).max()
         self.new_data = new_data
 
     def save_data(self):
-        # print("Creating train, validation and test set...")
         train, valid, test = self.__train_validate_test_split(self.new_data)
 
-        x_train = self.__create_np_array(train[self.data_column].values)
-        y_train = train[self.label_column].values.reshape(-1, 1)
+        self.__save_data(train, self.path, self.TRAIN_PREFIX + self.filename)
+        self.__save_data(valid, self.path, self.VALID_PREFIX + self.filename)
+        self.__save_data(test, self.path, self.TEST_PREFIX + self.filename)
 
-        x_valid = self.__create_np_array(valid[self.data_column].values)
-        y_valid = valid[self.label_column].values.reshape(-1, 1)
-
-        x_test = self.__create_np_array(test[self.data_column].values)
-        y_test = test[self.label_column].values.reshape(-1, 1)
-        #   y_test = pd.get_dummies(test[self.label_column]).values.reshape(-1, 2)
-
-        self.__save_to_file(x_train, y_train, self.path, self.TRAIN_PREFIX + self.filename)
-        self.__save_to_file(x_valid, y_valid, self.path, self.VALID_PREFIX + self.filename)
-        self.__save_to_file(x_test, y_test, self.path, self.TEST_PREFIX + self.filename)
-
-    @staticmethod
-    def __save_to_file(x, y, path, filename):
-        pickle_file = os.path.join(path, filename)
-        try:
-            f = open(pickle_file, 'wb')
-            save = {
-                'source': x,
-                'labels': y,
-            }
-            pickle.dump(save, f, pickle.HIGHEST_PROTOCOL)
-            f.close()
-        except Exception as e:
-            print('Unable to save data to', pickle_file, ':', e)
-            raise
-
-    def __create_np_array(self, data):
-        # PAD the data
-        data_matrix = np.zeros((data.shape[0], self.max_seq_len), dtype='int32')
-        for i in range(data.shape[0]):
-            data_matrix[i] = data[i][:self.max_seq_len] + [0] * (self.max_seq_len - len(data[i]))
-        return data_matrix
+    def __save_data(self, dataset, path, filename):
+        dataset.to_csv(path + filename + ".csv", sep=self.separator, index=False, encoding='utf-8')
 
     def __train_validate_test_split(self, data):
         size = len(data)

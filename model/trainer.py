@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow.contrib.tensorboard.plugins import projector
 import os
 
+
 def model_train(model, ph, ops, metrics, config, train_data, valid_data):
     """
     """
