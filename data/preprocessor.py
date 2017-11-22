@@ -80,16 +80,16 @@ class Preprocessor(object):
         print("Creating the dictionary...")
         self._build_dictionary(new_data, data_column)
 
-        print("Tokenize...")
-        new_data[data_column] = new_data[data_column].map(lambda x: self.tokenizer.tokenize(x))
+        # print("Tokenize...")
+        # new_data[data_column] = new_data[data_column].map(lambda x: self.tokenizer.tokenize(x))
 
         # TODO
         # new_data = new_data.loc[new_data[data_column].len() < self.max_data_length]
 
-        print("Replace the words with indexes...")
-        new_data[data_column] = new_data[data_column].map(
-            lambda x: list(map(
-                lambda y: self._dictionary[y] if y in self._dictionary else self.UNK_ID, x)))
+        # print("Replace the words with indexes...")
+        # new_data[data_column] = new_data[data_column].map(
+        #     lambda x: list(map(
+        #         lambda y: self._dictionary[y] if y in self._dictionary else self.UNK_ID, x)))
 
         print("Convert labels...")
         new_data[label_column] = new_data[label_column].map(lambda x: 1 if x > 3 else 0)
@@ -103,11 +103,11 @@ class Preprocessor(object):
     def save_data(self):
         train, valid, test = self.__train_validate_test_split(self.new_data)
 
-        self.__save_data(train, self.path, self.TRAIN_PREFIX + self.filename)
-        self.__save_data(valid, self.path, self.VALID_PREFIX + self.filename)
-        self.__save_data(test, self.path, self.TEST_PREFIX + self.filename)
+        self._save_data(train, self.path, self.TRAIN_PREFIX + self.filename)
+        self._save_data(valid, self.path, self.VALID_PREFIX + self.filename)
+        self._save_data(test, self.path, self.TEST_PREFIX + self.filename)
 
-    def __save_data(self, dataset, path, filename):
+    def _save_data(self, dataset, path, filename):
         dataset.to_csv(path + filename + ".csv", sep=self.separator, index=False, encoding='utf-8')
 
     def __train_validate_test_split(self, data):
