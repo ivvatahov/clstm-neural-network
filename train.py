@@ -10,7 +10,7 @@ valid_data_loader = DataLoader(Config.DATA_ROOT, Config.VALID_FILENAME)
 train_data = train_data_loader.load_data()
 valid_data = valid_data_loader.load_data()
 
-vocab = train_data_loader.load_vocab()
+vocab = train_data_loader.read_vocab()
 vocab_len = len(vocab)
 
 model = CLSTMModel()

@@ -8,7 +8,7 @@ class Config:
     NUM_UNITS= 32
     FILTER_NUM = 64
     FILTER_SIZE = 3
-    MAX_SEQUENCE_LENGTH = 100
+    MAX_SEQUENCE_LENGTH = 20
 
     # BUCKETS = [(16, 19)]
 
@@ -25,6 +25,6 @@ class Config:
     # training
     LOG_INTERVAL = 100
     NUM_EPOCHS = 20
-    BATCH_SIZE = 32
+    BATCH_SIZE = 64
     LEARNING_RATE = 0.0001
-    DROPOUT = 0.5
+    DROPOUT = 0.3
