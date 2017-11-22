@@ -1,9 +1,8 @@
+import os
+
 import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.tensorboard.plugins import projector
-import os
-
-from tensorflow.python.data import Iterator
 
 from config import Config
 
@@ -29,16 +28,17 @@ def model_train(sess, model, ph, ops, metrics, train_data, valid_data, vocabular
         for word in vocabulary.values:
             f.write(str(word[0]) + '\n')
 
-    iterator = Iterator.from_structure(train_data.output_types,
-                                       train_data.output_shapes)
+    train_iterator = train_data.make_initializable_iterator()
+    valid_iterator = valid_data.make_initializable_iterator()
 
-    next_batch = iterator.get_next()
+    next_train_batch = train_iterator.get_next()
+    next_valid_batch = valid_iterator.get_next()
 
-    training_init_op = iterator.make_initializer(train_data)
-    validation_init_op = iterator.make_initializer(valid_data)
 
     init_op = tf.group(tf.global_variables_initializer(),
-                       tf.tables_initializer())
+                       tf.tables_initializer(),
+                       train_iterator.initializer,
+                       valid_iterator.initializer)
 
     sess.run(init_op)
     print("Start training...")
@@ -46,8 +46,7 @@ def model_train(sess, model, ph, ops, metrics, train_data, valid_data, vocabular
         i = 0
         while True:
             try:
-                sess.run(training_init_op)
-                x_batch, y_batch = sess.run(next_batch)
+                x_batch, y_batch = sess.run(next_train_batch)
 
                 feed_dict = {
                     ph['x']: x_batch,
@@ -64,7 +63,6 @@ def model_train(sess, model, ph, ops, metrics, train_data, valid_data, vocabular
                                                   feed_dict)
                 # LOG
                 if i % Config.LOG_INTERVAL == 0:
-                    sess.run(validation_init_op)
                     model.is_training = False
                     VA = F1 = 0.0
                     TP = TN = FP = FN = 0
@@ -72,7 +70,7 @@ def model_train(sess, model, ph, ops, metrics, train_data, valid_data, vocabular
                     bn = 10
                     for j in range(bn):
                         try:
-                            x_valid, y_valid = sess.run(next_batch)
+                            x_valid, y_valid = sess.run(next_valid_batch)
 
                             feed_dict = {
                                 ph['x']: x_valid,
