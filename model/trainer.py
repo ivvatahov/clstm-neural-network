@@ -36,14 +36,13 @@ def model_train(sess, model, ph, ops, metrics, train_data, valid_data, vocabular
 
 
     init_op = tf.group(tf.global_variables_initializer(),
-                       tf.tables_initializer(),
-                       train_iterator.initializer,
-                       valid_iterator.initializer)
+                       tf.tables_initializer())
 
     sess.run(init_op)
     print("Start training...")
     for ep in range(Config.NUM_EPOCHS):
         i = 0
+        sess.run(train_iterator.initializer)
         while True:
             try:
                 x_batch, y_batch = sess.run(next_train_batch)
@@ -68,6 +67,8 @@ def model_train(sess, model, ph, ops, metrics, train_data, valid_data, vocabular
                     TP = TN = FP = FN = 0
                     summary = None
                     bn = 10
+
+                    sess.run(valid_iterator.initializer)
                     for j in range(bn):
                         try:
                             x_valid, y_valid = sess.run(next_valid_batch)
@@ -91,7 +92,6 @@ def model_train(sess, model, ph, ops, metrics, train_data, valid_data, vocabular
                             FN += fn
                             F1 += f1
                         except tf.errors.OutOfRangeError:
-                            print("End of valid dataset")
                             break
                     # Write logs at every iteration
                     summary_writer.add_summary(summary, ep * j + i)
@@ -100,16 +100,14 @@ def model_train(sess, model, ph, ops, metrics, train_data, valid_data, vocabular
                     print("TN:", TN, "FP:", FP)
                     print("FN:", FN, "TP:", TP)
                     print("epoch {}, "
-                          "step {}/{}, "
                           "train_loss {:g}, "
                           "train_acc {:g}, "
                           "train_f1_score {:g},"
                           "valid_acc {:g}, "
-                          "valid_f1_score {:g}".format(ep, i, j,
+                          "valid_f1_score {:g}".format(ep,
                                                        cost, acc, f1_train, VA / bn, F1 / bn))
                 i += 1
             except tf.errors.OutOfRangeError:
-                print("End of dataset")
                 break
 
             # Save

@@ -8,7 +8,7 @@ class Config:
     NUM_UNITS= 32
     FILTER_NUM = 64
     FILTER_SIZE = 3
-    MAX_SEQUENCE_LENGTH = 20
+    MAX_SEQUENCE_LENGTH = 30
 
     # BUCKETS = [(16, 19)]
 
