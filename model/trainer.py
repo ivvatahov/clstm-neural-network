@@ -61,7 +61,7 @@ def model_train(sess, model, ph, ops, metrics, train_data, valid_data, vocabular
                     x: x_batch,
                     y: y_batch,
                     lengths: np.repeat(x_batch.shape[1], y_batch.shape[0]),
-                    keep_prob: Config.DROPOUT
+                    keep_prob: 1.0 - Config.DROPOUT
                 }
 
                 model.is_training = True
