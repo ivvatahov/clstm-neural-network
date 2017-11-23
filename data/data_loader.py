@@ -18,13 +18,16 @@ class DataLoader(object):
         self.total_batch = None
         self.table = None
 
-    def _read_row(self, csv_row, field_delimiter=","):
+    def _parse_function(self, csv_row, field_delimiter=","):
         example, label = tf.decode_csv(csv_row, self.record_defaults, field_delimiter)
         label = tf.reshape(label, [1])
-        return example, label
 
-    def _tokenize_examples(self, example, label):
+        # tokenize
         example = tf.string_split([example], " ").values
+
+        #
+        # example = self.table.lookup(example)
+
         return example, label
 
     def _convert_to_indexes(self, example, labels):
@@ -42,13 +45,14 @@ class DataLoader(object):
         dataset = self._read_file()
         return (dataset
                 .skip(1)
-                .map(self._read_row)
-                .map(self._tokenize_examples)
-                .filter(lambda x, y: tf.size(x) < Config.MAX_SEQUENCE_LENGTH)
-                .map(self._convert_to_indexes)
+                .map(self._parse_function, num_parallel_calls=8)
+                .filter(lambda x, y: tf.size(x) <= Config.MAX_SEQUENCE_LENGTH)
+                .map(self._convert_to_indexes, num_parallel_calls=8)
                 # .repeat(Config.NUM_EPOCHS)
                 .padded_batch(Config.BATCH_SIZE,
-                              padded_shapes=self.padded_shapes))
+                              padded_shapes=self.padded_shapes)
+                .prefetch(100 * Config.BATCH_SIZE))
+
 
     def read_vocab(self):
         self.vocabulary = pd.read_csv(self.__data_root + "vocabulary_Reviews", header=None)

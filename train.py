@@ -94,7 +94,8 @@ ops = {
     'embedding_matrix': embedding_matrix,
     'merged_summary_op': merged_summary_op,
     'train_op': train_op,
-    'loss': loss
+    'loss': loss,
+    'global_step': global_step
 }
 
 sess = tf.Session()
