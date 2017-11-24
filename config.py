@@ -1,15 +1,18 @@
 class Config:
 
     # input
-    num_classes = 2
-    embedding_dim = 100
+    NUM_CLASSES = 2
+    EMBEDDING_DIM = 100
 
     # model
-    num_units = 32
-    filter_num = 64
-    filter_size = 3
+    NUM_UNITS= 32
+    FILTER_NUM = 64
+    FILTER_SIZE = 3
+    MAX_SEQUENCE_LENGTH = 32
 
-    # datasets and checkpoints
+    # BUCKETS = [(16, 19)]
+
+    # datasets
     LOGS_PATH = "/app/tmp/logs/1/"
     DATA_ROOT = "/app/data/datasets/amazon-fine-food-reviews/"
 
@@ -17,11 +20,13 @@ class Config:
     TEST_FILENAME = "test_Reviews"
     VALID_FILENAME = "valid_Reviews"
 
-    MODEL_CHECKPOINTS = "/app/checkpoints/1/"
+    DEFAULT_VOCABULARY_SIZE = 20000
 
     # training
-    log_interval = 100
-    num_epochs = 10
-    batch_size = 32
-    learning_rate = 0.0001
-    dropout = 0.3
+    CHECKPOINT_INTERVAL = 1000
+    CHECKPOINT_DIR = LOGS_PATH
+    LOG_INTERVAL = 100
+    NUM_EPOCHS = 100
+    BATCH_SIZE = 32
+    LEARNING_RATE = 0.0001
+    DROPOUT = 0.3
