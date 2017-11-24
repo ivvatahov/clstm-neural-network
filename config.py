@@ -24,7 +24,7 @@ class Config:
 
     # training
     CHECKPOINT_INTERVAL = 1000
-    CHECKPOINT_DIR = "/app/checkpoints/"
+    CHECKPOINT_DIR = LOGS_PATH
     LOG_INTERVAL = 100
     NUM_EPOCHS = 100
     BATCH_SIZE = 32
