@@ -1,46 +1,37 @@
-from model.clstm_model import CLSTMModel
 from data.data_loader import DataLoader
+from model.clstm_model import CLSTMModel
 from model.metrics.metrics import Metrics
 from model.trainer import *
 
-BATCH_SIZE = 32
-NUM_CLASSES = 2
-NUM_EPOCHS = 20
-LEARNING_RATE = 0.0001
-
-embedding_dim = 100
-
-logs_path = "/app/tmp/logs/10/"
-data_root = "/app/data/datasets/amazon-fine-food-reviews/"
-
-train_filename = "train_Reviews"
-test_filename = "test_Reviews"
-valid_filename = "valid_Reviews"
-
 print("Loading data...")
-train_data = DataLoader(data_root, train_filename, NUM_EPOCHS, BATCH_SIZE, "Text", "Score")
-train_data.load_data()
-valid_data = DataLoader(data_root, valid_filename, NUM_EPOCHS, BATCH_SIZE, "Text", "Score")
-valid_data.load_data()
+train_data_loader = DataLoader(Config.DATA_ROOT, Config.TRAIN_FILENAME)
+valid_data_loader = DataLoader(Config.DATA_ROOT, Config.VALID_FILENAME)
 
-model = CLSTMModel(num_classes=NUM_CLASSES, embedding_dim=embedding_dim,
-                   sequence_len=train_data.sequence_len)
+train_data = train_data_loader.load_data()
+valid_data = valid_data_loader.load_data()
 
-sess = tf.Session()
-x = tf.placeholder(tf.int32, [None, train_data.sequence_len], name="x")
+vocab = train_data_loader.read_vocab()
+vocab_len = len(vocab)
+
+model = CLSTMModel()
+
+# TODO: add buckets
+
+# placeholders
+x = tf.placeholder(tf.int32, [None, Config.MAX_SEQUENCE_LENGTH], name="x")
 y = tf.placeholder(tf.int32, [None, 1], name="y")
 lengths = tf.placeholder(tf.int32, [None])
 keep_prob = tf.placeholder(tf.float32)
 
-oh_y = tf.squeeze(tf.one_hot(y, depth=NUM_CLASSES, name='oh_y'))
+oh_y = tf.squeeze(tf.one_hot(y, depth=Config.NUM_CLASSES, name='oh_y'))
 
 with tf.name_scope("embeddings"):
     embedding_matrix = tf.Variable(
-        tf.random_uniform([train_data.vocab_len, embedding_dim], -1.0, 1.0),
+        tf.random_uniform([vocab_len, Config.EMBEDDING_DIM], -1.0, 1.0),
         name="embedding_matrix")
     emb = tf.nn.embedding_lookup(embedding_matrix, x)
     emb = tf.expand_dims(emb, -1)
-    emb = tf.nn.dropout(emb, keep_prob)
+    # emb = tf.nn.dropout(emb, ph['keep_prob'])
 
 with tf.name_scope(name='model'):
     logits = model.predict(emb, lengths, keep_prob)
@@ -56,12 +47,12 @@ with tf.name_scope('loss'):
             logits=logits,
             pos_weight=pos_weight))
     regularization_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-    total_loss = loss + tf.add_n(regularization_losses)
+    loss = loss + tf.add_n(regularization_losses)
 
 with tf.name_scope(name='optimizer'):
     global_step = tf.Variable(0, name="global_step", trainable=False)
-    optimizer = tf.train.AdamOptimizer(LEARNING_RATE)
-    grads_and_vars = optimizer.compute_gradients(total_loss)
+    optimizer = tf.train.AdamOptimizer(Config.LEARNING_RATE)
+    grads_and_vars = optimizer.compute_gradients(loss)
     train_op = optimizer.apply_gradients(grads_and_vars,
                                          global_step=global_step)
 
@@ -69,7 +60,7 @@ with tf.name_scope(name='optimizer'):
 metrics = Metrics(pred, y)
 
 # Create a summary to monitor cost tensor
-tf.summary.scalar("loss", total_loss)
+tf.summary.scalar("loss", loss)
 
 # Create a summary to monitor TP, TN, FP, FN
 tf.summary.scalar("TP", metrics.tp)
@@ -92,7 +83,28 @@ for grad, var in grads_and_vars:
 # Merge all summaries into a single op
 merged_summary_op = tf.summary.merge_all()
 
-model_train(model=model, sess=sess, x=x, y=y, lengths=lengths, keep_prob=keep_prob, train_op=train_op, loss=total_loss,
-            metrics=metrics, embedding_matrix=embedding_matrix,
-            merged_summary_op=merged_summary_op, logs_path=logs_path,
-            log_interval=100, num_epochs=NUM_EPOCHS, data=train_data, valid_data=valid_data)
+ph = {
+    'x': x,
+    'y': y,
+    'lengths': lengths,
+    'keep_prob': keep_prob
+}
+
+ops = {
+    'embedding_matrix': embedding_matrix,
+    'merged_summary_op': merged_summary_op,
+    'train_op': train_op,
+    'loss': loss,
+    'global_step': global_step
+}
+
+sess = tf.Session()
+
+model_train(sess=sess,
+            model=model,
+            ph=ph,
+            ops=ops,
+            metrics=metrics,
+            train_data=train_data,
+            valid_data=valid_data,
+            vocabulary=vocab)

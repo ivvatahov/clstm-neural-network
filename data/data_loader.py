@@ -1,55 +1,60 @@
-import numpy as np
 import pandas as pd
-from six.moves import cPickle as pickle
+import tensorflow as tf
+
+from config import Config
+from data.preprocessor import Preprocessor
 
 
 class DataLoader(object):
-    DEFAULT_VOCABULARY_SIZE = 20000
-
-    def __init__(self, data_root, filename, num_epochs, batch_size,
-                 data_column, labels_column):
+    def __init__(self, data_root, filename):
         self.__data_root = data_root
         self.__filename = filename
+        self.record_defaults = [[" "], [0]]
+        self.padded_shapes = ((Config.MAX_SEQUENCE_LENGTH,), (1,))
 
-        self.num_epochs = num_epochs
-        self.batch_size = batch_size
-        self.data_column = data_column
-        self.labels_column = labels_column
-
-        self.current_batch = 0
-
-        self.source = None
-        self.labels = None
-        self.data_len = None
-        self.sequence_len = None
+        self.vocab_len = 0
+        self.dataset = None
         self.vocabulary = None
-        self.vocab_len = None
         self.total_batch = None
+        self.table = None
+
+    def _parse_function(self, csv_row, field_delimiter=","):
+        example, label = tf.decode_csv(csv_row, self.record_defaults, field_delimiter)
+        label = tf.reshape(label, [1])
+
+        # tokenize
+        example = tf.string_split([example], " ").values
+
+        #
+        # example = self.table.lookup(example)
+
+        return example, label
+
+    def _convert_to_indexes(self, example, labels):
+        ids = self.table.lookup(example)
+        return ids, labels
+
+    def _read_file(self):
+        files = [self.__data_root + self.__filename + ".csv"]
+        self.dataset = tf.data.TextLineDataset(files)
+        return self.dataset
 
     def load_data(self):
-        self.source, self.labels = self.__read_file(self.__data_root, self.__filename)
-        self.data_len = self.labels.shape[0]
-        self.sequence_len = self.source.shape[1]
+        self.table = tf.contrib.lookup.index_table_from_file(self.__data_root + "vocabulary_Reviews",
+                                                             default_value=Preprocessor.UNK_ID)
+        dataset = self._read_file()
+        return (dataset
+                .skip(1)
+                .shuffle(buffer_size=10000)
+                .map(self._parse_function, num_parallel_calls=8)
+                .filter(lambda x, y: tf.size(x) <= Config.MAX_SEQUENCE_LENGTH)
+                .map(self._convert_to_indexes, num_parallel_calls=8)
+                # .repeat(Config.NUM_EPOCHS)
+                .padded_batch(Config.BATCH_SIZE,
+                              padded_shapes=self.padded_shapes)
+                .prefetch(100 * Config.BATCH_SIZE))
+
+
+    def read_vocab(self):
         self.vocabulary = pd.read_csv(self.__data_root + "vocabulary_Reviews", header=None)
-        self.vocab_len = len(self.vocabulary)
-        self.total_batch = int((self.data_len - 1) / self.batch_size) + 1
-
-    def next_batch(self, shuffle=True):
-        start = self.current_batch * self.batch_size
-        end = min((self.current_batch + 1) * self.batch_size, self.data_len)
-        self.current_batch = (self.current_batch + 1) % self.total_batch
-
-        if shuffle and self.current_batch == 1:
-            shuffle_idxs = np.random.permutation(self.data_len)
-            self.source = self.source[shuffle_idxs]
-            self.labels = self.labels[shuffle_idxs]
-
-        return self.source[start:end], self.labels[start:end]
-
-    @staticmethod
-    def __read_file(path, filename):
-        with open(path + filename, 'rb') as f:
-            save = pickle.load(f)
-            source = save['source']
-            labels = save['labels']
-        return source, labels
+        return self.vocabulary
