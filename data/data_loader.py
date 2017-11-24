@@ -45,6 +45,7 @@ class DataLoader(object):
         dataset = self._read_file()
         return (dataset
                 .skip(1)
+                .shuffle(buffer_size=10000)
                 .map(self._parse_function, num_parallel_calls=8)
                 .filter(lambda x, y: tf.size(x) <= Config.MAX_SEQUENCE_LENGTH)
                 .map(self._convert_to_indexes, num_parallel_calls=8)
