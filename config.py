@@ -5,15 +5,15 @@ class Config:
     EMBEDDING_DIM = 100
 
     # model
-    NUM_UNITS= 32
+    NUM_UNITS = 32
     FILTER_NUM = 64
     FILTER_SIZE = 3
-    MAX_SEQUENCE_LENGTH = 32
+    MAX_SEQUENCE_LENGTH = 20
 
     # BUCKETS = [(16, 19)]
 
     # datasets
-    LOGS_PATH = "/app/tmp/logs/1/"
+    LOGS_PATH = "/app/tmp/logs/87/"
     DATA_ROOT = "/app/data/datasets/amazon-fine-food-reviews/"
 
     TRAIN_FILENAME = "train_Reviews"
@@ -23,10 +23,10 @@ class Config:
     DEFAULT_VOCABULARY_SIZE = 20000
 
     # training
-    CHECKPOINT_INTERVAL = 1000
+    CHECKPOINT_INTERVAL = 10
     CHECKPOINT_DIR = LOGS_PATH
     LOG_INTERVAL = 100
-    NUM_EPOCHS = 100
-    BATCH_SIZE = 32
+    NUM_EPOCHS = 32
+    BATCH_SIZE = 64
     LEARNING_RATE = 0.0001
     DROPOUT = 0.3

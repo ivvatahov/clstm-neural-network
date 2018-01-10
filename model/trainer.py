@@ -65,8 +65,9 @@ def model_train(sess, model, ph, ops, metrics, train_data, valid_data, vocabular
                 }
 
                 model.is_training = True
-                _, train_loss, train_acc, f1_train = sess.run([train_op, loss, metrics.accuracy, metrics.f1_score],
-                                                              feed_dict=feed_dict)
+                _, train_loss, train_acc, f1_train = sess.run(
+                    [train_op, loss, metrics.accuracy, metrics.f1_score],
+                    feed_dict=feed_dict)
 
                 current_step = tf.train.global_step(sess, global_step)
 
@@ -97,7 +98,7 @@ def model_train(sess, model, ph, ops, metrics, train_data, valid_data, vocabular
                 feed_dict = {
                     x: x_valid,
                     y: y_valid,
-                    lengths: np.repeat(x_valid.shape[1], y_valid.shape[0]),
+                    lengths: np.repeat(x_valid.shape[1], x_valid.shape[0]),
                     keep_prob: 1
                 }
                 model.is_training = False

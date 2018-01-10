@@ -10,7 +10,7 @@ valid_data_loader = DataLoader(Config.DATA_ROOT, Config.VALID_FILENAME)
 train_data = train_data_loader.load_data()
 valid_data = valid_data_loader.load_data()
 
-vocab = train_data_loader.read_vocab()
+vocab = train_data_loader.load_vocab()
 vocab_len = len(vocab)
 
 model = CLSTMModel()
@@ -37,7 +37,10 @@ with tf.name_scope(name='model'):
     logits = model.predict(emb, lengths, keep_prob)
 
 with tf.name_scope(name='prediction'):
-    pred = tf.reshape(tf.cast(tf.argmax(logits, axis=1), tf.int32), shape=[-1, 1])
+    pred = tf.nn.softmax(logits)
+    pred = tf.reshape(tf.cast(tf.argmax(logits, axis=1), tf.int32),
+                      shape=[-1, 1],
+                      name="pred")
 
 with tf.name_scope('loss'):
     pos_weight = tf.constant([1.0, 1.0])

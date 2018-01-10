@@ -68,7 +68,7 @@ class CLSTMModel:
                                             is_training=self.is_training)
         return norm
 
-    def predict(self, x, lengths, keep_prob):
+    def predict(self, x, lengths, keep_prob=1):
 
         # Conv Layer
         conv = self.__conv2d(x, Config.FILTER_SIZE, Config.EMBEDDING_DIM,
